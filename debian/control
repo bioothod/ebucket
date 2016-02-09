@@ -1,7 +1,14 @@
 Source: ebucket
 Priority: extra
 Maintainer: Evgeniy Polyakov <zbr@ioremap.net>
-Build-Depends: debhelper (>= 7), cmake, cdbs
+Build-Depends:
+ debhelper (>= 7), cmake, cdbs,
+ libboost-dev | libboost1.48-dev, 
+ libboost-thread-dev | libboost-thread1.48-dev, 
+ libboost-program-options-dev | libboost-program-options1.48-dev,
+ elliptics-dev, elliptics-client,
+ libthevoid3-dev,
+ libmsgpack-dev
 Standards-Version: 3.9.1
 Section: libs
 Vcs-Git: git://github.com/bioothod/ebucket.git
@@ -11,15 +18,6 @@ Homepage: https://github.com/bioothod/ebucket.git
 Package: ebucket-dev
 Section: libdevel
 Architecture: any
-Build-Depends:
- libboost-dev | libboost1.48-dev, 
- libboost-thread-dev | libboost-thread1.48-dev, 
- libboost-program-options-dev | libboost-program-options1.48-dev,
- elliptics-dev, elliptics-client,
- cmake (>= 2.6),
- debhelper (>= 7.0.50~),
- libthevoid3-dev,
- libmsgpack-dev
 Description: Elliptics Bucket library
  Ebucket states for Elliptics Bucket - an object which contains metadata about how replicas should be arranged in the storage.
  This library helps operating with buckets.
