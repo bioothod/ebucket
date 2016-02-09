@@ -16,7 +16,9 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
  libboost-thread-dev | libboost-thread1.48-dev, 
  libboost-program-options-dev | libboost-program-options1.48-dev,
  elliptics-dev, elliptics-client,
- cmake (>= 2.6)
+ cmake (>= 2.6),
+ debhelper (>= 7.0.50~),
+ libthevoid3-dev
 Description: Elliptics Bucket library
  Ebucket states for Elliptics Bucket - an object which contains metadata about how replicas should be arranged in the storage.
  This library helps operating with buckets.

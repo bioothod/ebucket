@@ -11,7 +11,7 @@ BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:	boost-devel, boost-system, boost-thread, boost-program-options
 BuildRequires:	elliptics-client-devel >= 2.26.10.1
-BuildRequires:  cmake, msgpack-devel, python-virtualenv
+BuildRequires:  cmake, msgpack-devel, python-virtualenv, libthevoid3-devel
 
 %global debug_package %{nil}
 
