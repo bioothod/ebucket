@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 
 	ebucket::bucket_processor bp(node);
 
-	if (!bt.init(elliptics::parse_groups(groups.c_str()), bnames)) {
+	if (!bp.init(elliptics::parse_groups(groups.c_str()), bnames)) {
 		std::cerr << "Could not initialize bucket transport, exiting";
 		return -1;
 	}
