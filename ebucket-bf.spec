@@ -9,7 +9,7 @@ URL:		https://github.com/bioothod/ebucket
 Source0:	%{name}-%{version}.tar.bz2
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:	boost-devel, boost-system, boost-thread, boost-program-options
+BuildRequires:	boost-devel, boost-system, boost-thread, boost-program-options, boost-filesystem
 BuildRequires:	elliptics-client-devel >= 2.26.10.1
 BuildRequires:  cmake, msgpack-devel, python-virtualenv, libthevoid3-devel
 

@@ -6,6 +6,7 @@ Build-Depends:
  libboost-dev | libboost1.48-dev, 
  libboost-thread-dev | libboost-thread1.48-dev, 
  libboost-program-options-dev | libboost-program-options1.48-dev,
+ libboost-filesystem-dev | libboost-filesystem1.48-dev,
  elliptics-dev, elliptics-client,
  libthevoid3-dev,
  libmsgpack-dev
