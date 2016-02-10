@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 		("remote", bpo::value<std::vector<std::string>>(&remotes)->required()->composing(), "remote node: addr:port:family")
 		("log-file", bpo::value<std::string>(&log_file)->default_value("/dev/stdout"), "log file")
 		("log-level", bpo::value<std::string>(&log_level)->default_value("error"), "log level: error, info, notice, debug")
-		("groups", bpo::value<std::string>(&groups)->required(), "groups where index tree is stored: 1:2:3")
+		("groups", bpo::value<std::string>(&groups)->required(), "groups where bucket metadata is stored: 1:2:3")
 		("bucket", bpo::value<std::vector<std::string>>(&bnames)->composing(), "use these buckets in example")
 		;
 
