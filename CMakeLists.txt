@@ -15,6 +15,7 @@ string(REGEX MATCH "([0-9]+\\.[0-9]+$)" EBUCKET_VERSION_MINOR "${DEBFULLVERSION}
 include(cmake/locate_library.cmake)
 
 LOCATE_LIBRARY(MSGPACK "msgpack.hpp" "msgpack")
+LOCATE_LIBRARY(THEVOID "thevoid/rapidjson/reader.h" "thevoid")
 
 find_package(Boost COMPONENTS system thread program_options REQUIRED)
 find_package(Elliptics ${RIFT_VERSION_ELLIPTICS} REQUIRED)
@@ -24,6 +25,7 @@ include_directories(
 	${Boost_INCLUDE_DIRS}
 	${ELLIPTICS_INCLUDE_DIRS}
 	${MSGPACK_INCLUDE_DIRS}
+	${THEVOID_INCLUDE_DIRS}
 )
 
 link_directories(
