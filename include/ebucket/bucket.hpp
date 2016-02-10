@@ -149,116 +149,24 @@ public:
 		return m_stat.str();
 	}
 
-	elliptics::async_read_result read(const std::vector<int> &groups, const elliptics::key &key) {
-		elliptics::session s = session(true);
-		if (!m_valid) {
-			elliptics::async_read_result result(s);
-			elliptics::async_result_handler<elliptics::read_result_entry> handler(result);
-			handler.complete(elliptics::create_error(-EIO, "bucket: %s: valid: %d, reloaded: %d",
-						m_meta.name.c_str(), m_valid, m_reloaded));
-			return result;
-		}
+	elliptics::session session() const {
+		elliptics::session s(*m_node);
+		s.set_namespace(m_meta.name);
 
-		s.set_groups(groups);
-		return s.read_data(key, 0, 0);
-	}
-	
-	elliptics::async_read_result read(const elliptics::key &key) {
-		return read(m_meta.groups, key);
-	}
+		s.set_exceptions_policy(elliptics::session::no_exceptions);
+		s.set_filter(elliptics::filters::all_with_ack);
 
-	elliptics::async_read_result read_latest(const elliptics::key &key) {
-		elliptics::session s = session(true);
+		// if bucket is not valid, return empty session without destination groups
+		// any IO using this session will return error
+		if (!valid())
+			return s;
 
-		if (!m_valid) {
-			elliptics::async_read_result result(s);
-			elliptics::async_result_handler<elliptics::read_result_entry> handler(result);
-			handler.complete(elliptics::create_error(-EIO, "bucket: %s: valid: %d, reloaded: %d",
-						m_meta.name.c_str(), m_valid, m_reloaded));
-			return result;
-		}
+		s.set_groups(m_meta.groups);
+		s.set_timeout(60);
 
-		return s.read_latest(key, 0, 0);
+		return s;
 	}
 
-	elliptics::async_lookup_result prepare_latest(const elliptics::key &key) {
-		elliptics::session s = session(true);
-
-		if (!m_valid) {
-			elliptics::async_lookup_result result(s);
-			elliptics::async_result_handler<elliptics::lookup_result_entry> handler(result);
-			handler.complete(elliptics::create_error(-EIO, "bucket: %s: valid: %d, reloaded: %d",
-						m_meta.name.c_str(), m_valid, m_reloaded));
-			return result;
-		}
-
-		return s.prepare_latest(key, m_meta.groups);
-	}
-
-	elliptics::async_write_result write(const std::vector<int> groups, const elliptics::key &key,
-			const elliptics::data_pointer &data, size_t reserve_size, bool cache = false) {
-		elliptics::session s = session(cache);
-
-		if (!m_valid) {
-			elliptics::async_write_result result(s);
-			elliptics::async_result_handler<elliptics::write_result_entry> handler(result);
-			handler.complete(elliptics::create_error(-EIO, "bucket: %s: valid: %d, reloaded: %d",
-						m_meta.name.c_str(), m_valid, m_reloaded));
-			return result;
-		}
-
-		s.set_filter(elliptics::filters::all);
-		s.set_groups(groups);
-
-		s.transform(key);
-
-		dnet_io_control ctl;
-
-		memset(&ctl, 0, sizeof(ctl));
-		dnet_current_time(&ctl.io.timestamp);
-
-		ctl.cflags = s.get_cflags();
-		ctl.data = data.data();
-
-		ctl.io.flags = s.get_ioflags() | DNET_IO_FLAGS_PREPARE | DNET_IO_FLAGS_PLAIN_WRITE | DNET_IO_FLAGS_COMMIT;
-		ctl.io.user_flags = s.get_user_flags();
-		ctl.io.offset = 0;
-		ctl.io.size = data.size();
-		ctl.io.num = reserve_size;
-		if (ctl.io.size > ctl.io.num) {
-			ctl.io.num = ctl.io.size * 1.5;
-		}
-
-		memcpy(&ctl.id, &key.id(), sizeof(ctl.id));
-
-		ctl.fd = -1;
-
-		BH_LOG(m_node->get_log(), DNET_LOG_NOTICE,
-				"%s: bucket write: bucket: %s, key: %s, data-size: %d, reserve-size: %d, cache: %d, ts: %s (%ld.%ld)\n",
-				dnet_dump_id(&key.id()),
-				m_meta.name.c_str(), key.to_string(), data.size(), reserve_size, cache,
-				dnet_print_time(&ctl.io.timestamp), (long)ctl.io.timestamp.tsec, (long)ctl.io.timestamp.tnsec);
-
-		return s.write_data(ctl);
-	}
-
-	elliptics::async_write_result write(const elliptics::key &key, const elliptics::data_pointer &data,
-			size_t reserve_size, bool cache = false) {
-		return write(m_meta.groups, key, data, reserve_size, cache);
-	}
-
-	elliptics::async_remove_result remove(const elliptics::key &key) {
-		elliptics::session s = session(false);
-		if (!m_valid) {
-			elliptics::async_remove_result result(s);
-			elliptics::async_result_handler<elliptics::remove_result_entry> handler(result);
-			handler.complete(elliptics::create_error(-EIO, "bucket: %s: valid: %d, reloaded: %d",
-						m_meta.name.c_str(), m_valid, m_reloaded));
-			return result;
-		}
-
-		return s.remove(key);
-	}
 
 	bucket_meta meta() {
 		std::lock_guard<std::mutex> guard(m_lock);
@@ -325,19 +233,6 @@ private:
 	bucket_meta m_meta;
 
 	bucket_stat m_stat;
-
-	elliptics::session session(bool cache) {
-		elliptics::session s(*m_node);
-		s.set_namespace(m_meta.name);
-		s.set_groups(m_meta.groups);
-		s.set_filter(elliptics::filters::all_with_ack);
-		s.set_timeout(60);
-		s.set_exceptions_policy(elliptics::session::no_exceptions);
-		if (cache)
-			s.set_ioflags(DNET_IO_FLAGS_CACHE);
-
-		return s;
-	}
 
 	void reload_completed(const elliptics::sync_read_result &result, const elliptics::error_info &error) {
 		elliptics::logger &log = m_node->get_log();
