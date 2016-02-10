@@ -1,3 +1,10 @@
+ebucket (0.1.0) unstable; urgency=low
+
+  * Added test and example code
+  * Changed bucket API to setup session only, no need to use duplicated methods from elliptics
+
+ -- Evgeniy Polyakov <zbr@ioremap.net>  Wed, 10 Feb 2016 04:01:44 +0400
+
 ebucket (2.26.0.0.1) unstable; urgency=low
 
   * Initial commit

@@ -1,6 +1,6 @@
 Summary:	Ebucket - Elliptics bucket processing library
 Name:		ebucket
-Version:	2.26.0.0.1
+Version:	0.1.0
 Release:	1%{?dist}
 
 License:	Apache 2.0
@@ -57,6 +57,10 @@ rm -rf %{buildroot}
 #%{_libdir}/*.so.*
 
 %changelog
+* Wed Feb 10 2016 Evgeniy Polyakov <zbr@ioremap.net> - 0.1.0
+- Added test and example code
+- Changed bucket API to setup session only, no need to use duplicated methods from elliptics
+
 * Fri Feb 05 2016 Evgeniy Polyakov <zbr@ioremap.net> - 2.26.0.0.1
 - Initial commit
 
