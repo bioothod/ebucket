@@ -149,7 +149,7 @@ public:
 		return m_stat.str();
 	}
 
-	elliptics::async_read_result read(const std::vector<int> &groups, const std::string &key) {
+	elliptics::async_read_result read(const std::vector<int> &groups, const elliptics::key &key) {
 		elliptics::session s = session(true);
 		if (!m_valid) {
 			elliptics::async_read_result result(s);
@@ -163,11 +163,11 @@ public:
 		return s.read_data(key, 0, 0);
 	}
 	
-	elliptics::async_read_result read(const std::string &key) {
+	elliptics::async_read_result read(const elliptics::key &key) {
 		return read(m_meta.groups, key);
 	}
 
-	elliptics::async_read_result read_latest(const std::string &key) {
+	elliptics::async_read_result read_latest(const elliptics::key &key) {
 		elliptics::session s = session(true);
 
 		if (!m_valid) {
@@ -181,7 +181,7 @@ public:
 		return s.read_latest(key, 0, 0);
 	}
 
-	elliptics::async_lookup_result prepare_latest(const std::string &key) {
+	elliptics::async_lookup_result prepare_latest(const elliptics::key &key) {
 		elliptics::session s = session(true);
 
 		if (!m_valid) {
@@ -195,8 +195,8 @@ public:
 		return s.prepare_latest(key, m_meta.groups);
 	}
 
-	elliptics::async_write_result write(const std::vector<int> groups, const std::string &key,
-			const std::string &data, size_t reserve_size, bool cache = false) {
+	elliptics::async_write_result write(const std::vector<int> groups, const elliptics::key &key,
+			const elliptics::data_pointer &data, size_t reserve_size, bool cache = false) {
 		elliptics::session s = session(cache);
 
 		if (!m_valid) {
@@ -207,13 +207,10 @@ public:
 			return result;
 		}
 
-		elliptics::data_pointer dp = elliptics::data_pointer::from_raw((char *)data.data(), data.size());
-
 		s.set_filter(elliptics::filters::all);
 		s.set_groups(groups);
 
-		elliptics::key id(key);
-		s.transform(id);
+		s.transform(key);
 
 		dnet_io_control ctl;
 
@@ -221,35 +218,36 @@ public:
 		dnet_current_time(&ctl.io.timestamp);
 
 		ctl.cflags = s.get_cflags();
-		ctl.data = dp.data();
+		ctl.data = data.data();
 
 		ctl.io.flags = s.get_ioflags() | DNET_IO_FLAGS_PREPARE | DNET_IO_FLAGS_PLAIN_WRITE | DNET_IO_FLAGS_COMMIT;
 		ctl.io.user_flags = s.get_user_flags();
 		ctl.io.offset = 0;
-		ctl.io.size = dp.size();
+		ctl.io.size = data.size();
 		ctl.io.num = reserve_size;
 		if (ctl.io.size > ctl.io.num) {
 			ctl.io.num = ctl.io.size * 1.5;
 		}
 
-		memcpy(&ctl.id, &id.id(), sizeof(ctl.id));
+		memcpy(&ctl.id, &key.id(), sizeof(ctl.id));
 
 		ctl.fd = -1;
 
 		BH_LOG(m_node->get_log(), DNET_LOG_NOTICE,
 				"%s: bucket write: bucket: %s, key: %s, data-size: %d, reserve-size: %d, cache: %d, ts: %s (%ld.%ld)\n",
-				dnet_dump_id(&id.id()),
-				m_meta.name.c_str(), key.c_str(), data.size(), reserve_size, cache,
+				dnet_dump_id(&key.id()),
+				m_meta.name.c_str(), key.to_string(), data.size(), reserve_size, cache,
 				dnet_print_time(&ctl.io.timestamp), (long)ctl.io.timestamp.tsec, (long)ctl.io.timestamp.tnsec);
 
 		return s.write_data(ctl);
 	}
 
-	elliptics::async_write_result write(const std::string &key, const std::string &data, size_t reserve_size, bool cache = false) {
+	elliptics::async_write_result write(const elliptics::key &key, const elliptics::data_pointer &data,
+			size_t reserve_size, bool cache = false) {
 		return write(m_meta.groups, key, data, reserve_size, cache);
 	}
 
-	elliptics::async_remove_result remove(const std::string &key) {
+	elliptics::async_remove_result remove(const elliptics::key &key) {
 		elliptics::session s = session(false);
 		if (!m_valid) {
 			elliptics::async_remove_result result(s);
