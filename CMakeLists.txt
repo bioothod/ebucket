@@ -5,13 +5,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -W -Wall -Wextra -fstack-prot
 
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/debian/changelog" DEBCHANGELOG)
 
-# version string: 2.26.0.3.12
-# elliptics version is 2.26
-# ebucket major 2.26.0
+# version string: 0.3.12
+# ebucket major 0
 # ebucket minor 3.12
-string(REGEX MATCH "([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)" DEBFULLVERSION "${DEBCHANGELOG}")
-string(REGEX MATCH "([0-9]+\\.[0-9]+)" EBUCKET_VERSION_ELLIPTICS "${DEBFULLVERSION}")
-string(REGEX MATCH "([0-9]+\\.[0-9]+\\.[0-9]+)" EBUCKET_VERSION_MAJOR "${DEBFULLVERSION}")
+string(REGEX MATCH "([0-9]+\\.[0-9]+\\.[0-9]+)" DEBFULLVERSION "${DEBCHANGELOG}")
+string(REGEX MATCH "([0-9]+)" EBUCKET_VERSION_MAJOR "${DEBFULLVERSION}")
 string(REGEX MATCH "([0-9]+\\.[0-9]+$)" EBUCKET_VERSION_MINOR "${DEBFULLVERSION}")
 
 include(cmake/locate_library.cmake)
