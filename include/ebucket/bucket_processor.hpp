@@ -265,6 +265,22 @@ public:
 		return elliptics::error_info();
 	}
 
+	elliptics::error_info find_bucket(const std::string &bname, bucket &b) {
+		std::lock_guard<std::mutex> lock(m_lock);
+		auto it = m_buckets.find(bname);
+		if (it == m_buckets.end()) {
+			return elliptics::create_error(-ENOENT, "could not find bucket '%s' in bucket list", bname.c_str());
+		}
+
+		if (!it->second->valid()) {
+			return elliptics::create_error(-EINVAL, "bucket '%s' is not valid", bname.c_str());
+		}
+
+		b = it->second;
+		return elliptics::error_info();
+	}
+
+
 private:
 	std::shared_ptr<elliptics::node> m_node;
 
@@ -281,21 +297,6 @@ private:
 	elliptics_stat m_stat;
 
 	elliptics::session m_error_session;
-
-	elliptics::error_info find_bucket(const std::string &bname, bucket &b) {
-		std::lock_guard<std::mutex> lock(m_lock);
-		auto it = m_buckets.find(bname);
-		if (it == m_buckets.end()) {
-			return elliptics::create_error(-ENOENT, "could not find bucket '%s' in bucket list", bname.c_str());
-		}
-
-		if (!it->second->valid()) {
-			return elliptics::create_error(-EINVAL, "bucket '%s' is not valid", bname.c_str());
-		}
-
-		b = it->second;
-		return elliptics::error_info();
-	}
 
 	std::map<std::string, bucket> read_buckets(const std::vector<int> mgroups, const std::vector<std::string> &bnames) {
 		std::map<std::string, bucket> buckets;
