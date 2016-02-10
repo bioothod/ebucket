@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 		("remote", bpo::value<std::vector<std::string>>(&remotes)->required()->composing(), "remote node: addr:port:family")
 		("log-file", bpo::value<std::string>(&log_file)->default_value("/dev/stdout"), "log file")
 		("log-level", bpo::value<std::string>(&log_level)->default_value("error"), "log level: error, info, notice, debug")
-		("groups", bpo::value<std::string>(&groups)->required(), "groups where index tree is stored: 1:2:3")
+		("groups", bpo::value<std::string>(&groups)->required(), "groups where bucket metadata is stored: 1:2:3")
 		("bucket", bpo::value<std::vector<std::string>>(&bnames)->composing(), "use these buckets in example")
 		;
 
@@ -60,6 +60,48 @@ int main(int argc, char *argv[])
 	if (!bp.init(elliptics::parse_groups(groups.c_str()), bnames)) {
 		std::cerr << "Could not initialize bucket transport, exiting";
 		return -1;
+	}
+
+	for (int i = 0; i < 10; ++i) {
+		std::string key = "this is a key " + std::to_string(i);
+		std::string data = "this is some data " + std::to_string(i);
+		ebucket::bucket b;
+
+		elliptics::error_info err = bp.get_bucket(data.size(), b);
+		if (err) {
+			std::cerr << "Could not find bucket for size " << data.size() << " : " << err.message() << std::endl;
+			return err.code();
+		}
+
+		elliptics::session s = b->session();
+
+		auto ret = s.write_data(key, data, 0);
+		ret.wait();
+		if (!ret.is_valid() || ret.error()) {
+			std::cerr << "Could not write data into bucket " << b->name() <<
+				", size: " << data.size() <<
+				", valid: " << ret.is_valid() <<
+				", error: " << ret.error().message() <<
+				std::endl;
+			return err.code();
+		}
+
+		s.set_filter(elliptics::filters::positive);
+		auto read_ret = s.read_data(key, 0, 0);
+		if (!read_ret.is_valid() || read_ret.error()) {
+			std::cerr << "Could not read data from bucket " << b->name() <<
+				", valid: " << read_ret.is_valid() <<
+				", error: " << read_ret.error().message() <<
+				std::endl;
+			return err.code();
+		}
+
+		if (read_ret.get_one().file().to_string() != data) {
+			std::cerr << "Read invalid data" << std::endl;
+			return -EINVAL;
+		}
+
+		std::cout << "Completed read/write from bucket " << b->name() << std::endl;
 	}
 
 	return 0;
