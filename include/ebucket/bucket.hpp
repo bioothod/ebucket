@@ -217,6 +217,9 @@ public:
 		// TODO next step is to add network/disk performance metric
 		// TODO we have to measure upload time and modify weight
 		// TODO accordingly to the time it took to write data
+		//
+		// TODO move weight calculation into separate method called when statistics have been updated in background
+		// TODO this method should be lightweight
 		return size_weight;
 	}
 
