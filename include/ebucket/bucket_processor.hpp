@@ -92,8 +92,14 @@ public:
 
 		limits l;
 
-		std::map<float, bucket> good_buckets;
-		std::map<float, bucket> really_good_buckets;
+		struct bucket_weight {
+			bucket		b;
+			float		weight = 0;
+			int		counter = 0;
+		};
+
+		std::vector<bucket_weight> good_buckets;
+		std::vector<bucket_weight> really_good_buckets;
 
 		float sum = 0;
 		float really_good_sum = 0;
@@ -109,11 +115,15 @@ public:
 				if (w <= 0)
 					continue;
 
-				good_buckets[w] = it->second;
+				bucket_weight bw;
+				bw.b = it->second;
+				bw.weight = w;
+
+				good_buckets.push_back(bw);
 				sum += w;
 
 				if (w > 0.5) {
-					really_good_buckets[w] = it->second;
+					really_good_buckets.push_back(bw);
 					really_good_sum += w;
 				}
 			}
@@ -136,7 +146,6 @@ public:
 		// first test - call @get_bucket() many times, check that distribution
 		// of the buckets looks similar to the initial weights
 		int num = 10000;
-		std::map<std::string, int> bucket_counters;
 		for (int i = 0; i < num; ++i) {
 			std::string bname;
 			elliptics::error_info err = get_bucket(1, bname);
@@ -144,31 +153,29 @@ public:
 				throw std::runtime_error("get_bucket() failed: " + err.message());
 			}
 
-			int cnt = bucket_counters[bname];
-			cnt++;
-			bucket_counters[bname] = cnt;
+			auto bit = std::find_if(good_buckets.begin(), good_buckets.end(),
+					[&](const bucket_weight &bw) { return bw.b->name() == bname; });
+			if (bit != good_buckets.end()) {
+				bit->counter++;
+			}
 		}
 
 		for (auto it = good_buckets.begin(), end = good_buckets.end(); it != end; ++it) {
-			float w = it->first;
-			bucket b = it->second;
-
-			int counter = bucket_counters[b->name()];
-			float ratio = (float)counter/(float)num;
-			float wratio = w / sum;
+			float ratio = (float)it->counter/(float)num;
+			float wratio = it->weight / sum;
 
 			// @ratio is a number of this bucket selection related to total number of runs
 			// it should rougly correspond to the ratio of free space in given bucket, or weight
 
 
 			BH_LOG(log, DNET_LOG_INFO, "test: bucket: %s, weight: %f, weight ratio: %f, selection ratio: %f",
-					b->name(), w, wratio, ratio);
+					it->b->name(), it->weight, wratio, ratio);
 
 			float eq = ratio / wratio;
 			if (eq > 1.2 || eq < 0.8) {
 				std::ostringstream ss;
-				ss << "bucket: " << b->name() <<
-					", weight: " << w <<
+				ss << "bucket: " << it->b->name() <<
+					", weight: " << it->weight <<
 					", weight ratio: " << wratio <<
 					", selection ratio: " << ratio <<
 					": parameters mismatch, weight and selection ratios should be close to each other";
@@ -180,7 +187,7 @@ public:
 	}
 
 	// returns bucket name in @data or negative error code in @error
-	elliptics::error_info get_bucket(size_t size, std::string &bname) {
+	elliptics::error_info get_bucket(size_t size, bucket &ret) {
 		elliptics::logger &log = m_node->get_log();
 
 		std::unique_lock<std::mutex> guard(m_lock);
@@ -240,11 +247,21 @@ public:
 					it->b->name().c_str(), sum, rnd, it->w);
 			rnd -= it->w;
 			if (rnd <= 0) {
-				bname = it->b->name();
+				ret = it->b;
 				break;
 			}
 		}
 
+		return elliptics::error_info();
+	}
+
+	elliptics::error_info get_bucket(size_t size, std::string &bname) {
+		bucket b;
+		elliptics::error_info err = get_bucket(size, b);
+		if (err)
+			return err;
+
+		bname = b->name();
 		return elliptics::error_info();
 	}
 
@@ -305,8 +322,23 @@ public:
 		return b->prepare_latest(url.key);
 	}
 
+	elliptics::async_write_result write(const elliptics::key &key,
+			const elliptics::data_pointer &data, size_t reserve_size, bool cache) {
+		bucket b;
+		elliptics::error_info err = get_bucket(std::max(data.size(), reserve_size), b);
+		if (err) {
+			elliptics::async_write_result result(m_error_session);
+			elliptics::async_result_handler<elliptics::write_result_entry> handler(result);
+			handler.complete(err);
+			return result;
+		}
+
+		return b->write(key, data, reserve_size, cache);
+	}
+
+
 	elliptics::async_write_result write(const std::vector<int> groups, const eurl &url,
-			const std::string &data, size_t reserve_size, bool cache) {
+			const elliptics::data_pointer &data, size_t reserve_size, bool cache) {
 		bucket b;
 		elliptics::error_info err = find_bucket(url.bucket, b);
 		if (err) {
@@ -319,7 +351,7 @@ public:
 		return b->write(groups, url.key, data, reserve_size, cache);
 	}
 
-	elliptics::async_write_result write(const eurl &url, const std::string &data, size_t reserve_size, bool cache) {
+	elliptics::async_write_result write(const eurl &url, const elliptics::data_pointer &data, size_t reserve_size, bool cache) {
 		bucket b;
 		elliptics::error_info err = find_bucket(url.bucket, b);
 		if (err) {
@@ -343,16 +375,6 @@ public:
 		}
 
 		return b->remove(url.key);
-	}
-
-	std::string generate(const std::string &bname, const std::string &key) const {
-		elliptics::session s(*m_node);
-		s.set_namespace(bname.data(), bname.size());
-		elliptics::key k(key);
-		s.transform(k);
-
-		DNET_DUMP_ID_LEN(name, &k.id(), DNET_ID_SIZE);
-		return key + "." + std::string(name);
 	}
 
 private:
