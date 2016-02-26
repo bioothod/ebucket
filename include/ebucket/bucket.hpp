@@ -262,7 +262,7 @@ private:
 			}
 
 			try {
-				auto file = ent->file();
+				const elliptics::data_pointer &file = ent->file();
 
 				msgpack::unpacked msg;
 				msgpack::unpack(&msg, file.data<char>(), file.size());
@@ -275,7 +275,7 @@ private:
 				std::copy(tmp.groups.begin(), tmp.groups.end(), std::ostream_iterator<int>(ss, ":"));
 
 				BH_LOG(log, DNET_LOG_INFO, "meta_unpack: bucket: %s, acls: %ld, flags: 0x%lx, groups: %s",
-						m_meta.name.c_str(), m_meta.acl.size(), m_meta.flags, ss.str().c_str());
+						tmp.name.c_str(), tmp.acl.size(), tmp.flags, ss.str().c_str());
 
 				std::unique_lock<std::mutex> guard(m_lock);
 				std::swap(m_meta, tmp);
