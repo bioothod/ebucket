@@ -19,15 +19,14 @@ int main(int argc, char *argv[])
 		("help", "this help message")
 		;
 
-	std::vector<std::string> bnames;
-	std::string log_file, log_level, groups;
-	bpo::options_description ell("Elliptics options");
+	std::string log_file, log_level, groups_str;
+	bpo::options_description ell("Elliptics options, this test will generate random bucket names, put them into bucket key and test, "
+			"whether bucket key initialization works. If it works, common bucket processor test will be started.");
 	ell.add_options()
 		("remote", bpo::value<std::vector<std::string>>(&remotes)->required()->composing(), "remote node: addr:port:family")
 		("log-file", bpo::value<std::string>(&log_file)->default_value("/dev/stdout"), "log file")
 		("log-level", bpo::value<std::string>(&log_level)->default_value("error"), "log level: error, info, notice, debug")
-		("groups", bpo::value<std::string>(&groups)->required(), "groups where bucket metadata is stored: 1:2:3")
-		("bucket", bpo::value<std::vector<std::string>>(&bnames)->composing(), "use these buckets in example")
+		("groups", bpo::value<std::string>(&groups_str)->required(), "groups where bucket metadata is stored: 1:2:3")
 		;
 
 	bpo::options_description cmdline_options;
@@ -49,6 +48,8 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	std::vector<int> groups = elliptics::parse_groups(groups_str.c_str());
+
 	elliptics::file_logger log(log_file.c_str(), elliptics::file_logger::parse_level(log_level));
 	std::shared_ptr<elliptics::node> node(new elliptics::node(elliptics::logger(log, blackhole::log::attributes_t())));
 
@@ -57,7 +58,63 @@ int main(int argc, char *argv[])
 
 	ebucket::bucket_processor bp(node);
 
-	if (!bp.init(elliptics::parse_groups(groups.c_str()), bnames)) {
+	std::string bucket_key = "bucket-key-" + std::to_string(time(NULL));
+	std::ostringstream bucket_key_data;
+
+	elliptics::session s(*node);
+	std::string ns = "bucket";
+	s.set_namespace(ns.data(), ns.size());
+	s.set_groups(groups);
+	s.set_exceptions_policy(elliptics::session::no_exceptions);
+
+	srand(time(NULL));
+	int num_buckets = rand() % 7 + 3;
+	for (int i = 0; i < num_buckets; ++i) {
+		ebucket::bucket_acl acl;
+		acl.user = "writer";
+		acl.token = "secure token";
+		acl.flags = ebucket::bucket_acl::auth_flags::auth_write;
+
+		ebucket::bucket_meta bmeta;
+		bmeta.name = "bucket-test-" + std::to_string(i) + "." + std::to_string(rand());
+		bmeta.groups = groups;
+		bmeta.acl[acl.user] = acl;
+
+		std::ostringstream ss;
+		msgpack::pack(ss, bmeta);
+
+		auto ret = s.write_data(bmeta.name, ss.str(), 0);
+		if (!ret.is_valid()) {
+			std::cerr << "could not write bucket meta, async result is not valid" << std::endl;
+			return -EINVAL;
+		}
+
+		ret.wait();
+		if (ret.error()) {
+			std::cerr << "could not write bucket meta, error: " << ret.error().message() << std::endl;
+			return ret.error().code();
+		}
+
+		std::cout << "successfully uploaded bucket " << bmeta.name << std::endl;
+		bucket_key_data << bmeta.name;
+		if (i != num_buckets - 1)
+			bucket_key_data << "\n";
+	}
+
+	auto ret = s.write_data(bucket_key, bucket_key_data.str(), 0);
+	if (!ret.is_valid()) {
+		std::cerr << "could not write bucket key, async result is not valid" << std::endl;
+		return -EINVAL;
+	}
+
+	ret.wait();
+	if (ret.error()) {
+		std::cerr << "could not write bucket key, error: " << ret.error().message() << std::endl;
+		return ret.error().code();
+	}
+	std::cout << "successfully uploaded bucket key " << bucket_key << std::endl;
+
+	if (!bp.init(groups, bucket_key)) {
 		std::cerr << "Could not initialize bucket transport, exiting";
 		return -1;
 	}
