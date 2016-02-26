@@ -242,11 +242,36 @@ public:
 			return elliptics::create_error(-ENODEV, "there are buckets, but they are not suitable for size %zd", size);
 		}
 
+		auto routes = m_error_session.get_routes();
+
 		limits l;
 		float sum = 0;
 		for (auto it = good_buckets.rbegin(), end = good_buckets.rend(); it != end; ++it) {
 			// weight calculation is a rather heavy task, cache this value
 			it->w = it->b->weight(1, l);
+
+			// check whether all groups from given buckets are present in the current route table
+			size_t have_routes = 0;
+			bucket_meta bmeta = it->b->meta();
+
+			for (auto it = routes.begin(), it_end = routes.end(); it != it_end; ++it) {
+				for (size_t i = 0; i < bmeta.groups.size(); ++i) {
+					if (it->group_id == bmeta.groups[i]) {
+						have_routes++;
+						break;
+					}
+				}
+
+				if (have_routes == bmeta.groups.size())
+					break;
+			}
+
+
+			// there are no routes to one or more groups in this bucket, heavily decrease its weight
+			if (have_routes != bmeta.groups.size()) {
+				it->w /= 100;
+			}
+
 			sum += it->w;
 		}
 

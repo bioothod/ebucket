@@ -181,6 +181,8 @@ public:
 	// weight is a value in (0,1) range,
 	// the closer to 1, the more likely this bucket will be selected
 	float weight(uint64_t size, const limits &l) {
+		float weight = 0;
+
 		std::lock_guard<std::mutex> guard(m_lock);
 
 		// we select backend with the smallest amount of space available
@@ -198,7 +200,8 @@ public:
 
 			tmp /= (float)(bs.size.limit);
 
-			// size is less than hard limit - this backend doesn't have enough space for given request
+			// there is at least one backend which size is less than hard limit,
+			// this backend doesn't have enough space for given request
 			if (tmp < l.size.hard) {
 				return 0;
 			}
@@ -212,15 +215,25 @@ public:
 			if (tmp < size_weight || size_weight == 0)
 				size_weight = tmp;
 		}
+		weight = size_weight;
 
-		// so far only size metric is supported
+		// bucket stat is incomplete, there are no some groups
+		if (m_stat.backends.size() != m_meta.groups.size()) {
+			weight /= 50;
+		}
+
+
+		// following metrics are supported:
+		//  * size of the every backend in the bucket
+		//  * whether stats for all groups is present or not
+		//
 		// TODO next step is to add network/disk performance metric
 		// TODO we have to measure upload time and modify weight
 		// TODO accordingly to the time it took to write data
 		//
-		// TODO move weight calculation into separate method called when statistics have been updated in background
+		// TODO move weight calculation into separate method called when statistics is being updated in background
 		// TODO this method should be lightweight
-		return size_weight;
+		return weight;
 	}
 
 private:
