@@ -1,6 +1,6 @@
 Summary:	Ebucket - Elliptics bucket processing library
 Name:		ebucket
-Version:	0.1.0
+Version:	0.2.0
 Release:	1%{?dist}
 
 License:	Apache 2.0
@@ -57,6 +57,11 @@ rm -rf %{buildroot}
 #%{_libdir}/*.so.*
 
 %changelog
+* Sat Feb 27 2016 Evgeniy Polyakov <zbr@ioremap.net> - 0.2.0
+- test: added automatic bucket and bucket list generation and initialization test which checks bucket key
+- bucket_processor: added initalization via bucket key
+- weight: per-bucket weight is decreased if stats are incomplete, it is further decreased in @get_bucket() if some groups are absent from current route table
+
 * Wed Feb 10 2016 Evgeniy Polyakov <zbr@ioremap.net> - 0.1.0
 - Added test and example code
 - Changed bucket API to setup session only, no need to use duplicated methods from elliptics

@@ -1,3 +1,11 @@
+ebucket (0.2.0) unstable; urgency=low
+
+  * test: added automatic bucket and bucket list generation and initialization test which checks bucket key
+  * bucket_processor: added initalization via bucket key
+  * weight: per-bucket weight is decreased if stats are incomplete, it is further decreased in @get_bucket() if some groups are absent from current route table
+
+ -- Evgeniy Polyakov <zbr@ioremap.net>  Sat, 27 Feb 2016 02:40:52 +0400
+
 ebucket (0.1.0) unstable; urgency=low
 
   * Added test and example code
