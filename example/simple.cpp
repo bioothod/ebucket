@@ -20,14 +20,15 @@ int main(int argc, char *argv[])
 		;
 
 	std::vector<std::string> bnames;
-	std::string log_file, log_level, groups;
+	std::string log_file, log_level, groups_str, bucket_key;
 	bpo::options_description ell("Elliptics options");
 	ell.add_options()
 		("remote", bpo::value<std::vector<std::string>>(&remotes)->required()->composing(), "remote node: addr:port:family")
 		("log-file", bpo::value<std::string>(&log_file)->default_value("/dev/stdout"), "log file")
 		("log-level", bpo::value<std::string>(&log_level)->default_value("error"), "log level: error, info, notice, debug")
-		("groups", bpo::value<std::string>(&groups)->required(), "groups where bucket metadata is stored: 1:2:3")
+		("groups", bpo::value<std::string>(&groups_str)->required(), "groups where bucket metadata is stored: 1:2:3")
 		("bucket", bpo::value<std::vector<std::string>>(&bnames)->composing(), "use these buckets in example")
+		("bucket-key", bpo::value<std::string>(&bucket_key), "use this bucket key to read list of eol-separated buckets")
 		;
 
 	bpo::options_description cmdline_options;
@@ -56,8 +57,17 @@ int main(int argc, char *argv[])
 	node->add_remote(rem);
 
 	ebucket::bucket_processor bp(node);
+	auto groups = elliptics::parse_groups(groups_str.c_str());
 
-	if (!bp.init(elliptics::parse_groups(groups.c_str()), bnames)) {
+	bool initialized;
+
+	if (!bucket_key.empty()) {
+		initialized = bp.init(groups, bucket_key);
+	} else {
+		initialized = bp.init(groups, bnames);
+	}
+
+	if (!initialized) {
 		std::cerr << "Could not initialize bucket transport, exiting";
 		return -1;
 	}
