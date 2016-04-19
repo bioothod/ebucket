@@ -18,7 +18,7 @@ LOCATE_LIBRARY(MSGPACK "msgpack.hpp" "msgpack")
 LOCATE_LIBRARY(THEVOID "thevoid/rapidjson/reader.h" "thevoid")
 
 find_package(Boost COMPONENTS system thread program_options REQUIRED)
-find_package(Elliptics ${RIFT_VERSION_ELLIPTICS} REQUIRED)
+find_package(Elliptics REQUIRED)
 
 include_directories(
 	"${CMAKE_CURRENT_SOURCE_DIR}/include"
