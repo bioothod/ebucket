@@ -95,120 +95,8 @@ public:
 		return m_node->get_log();
 	}
 
-	// run self test, raise exception if there are problems
-	//
-	// Tests:
-	// 1. select bucket for upload multiple times,
-	// 	check that distribution is biased towards buckets with more free space available
-	void test() {
-		elliptics::logger &log = m_node->get_log();
-		BH_LOG(log, DNET_LOG_INFO, "test: start: buckets: %d", m_buckets.size());
-
-		std::unique_lock<std::mutex> guard(m_lock);
-		if (m_buckets.size() == 0) {
-			throw std::runtime_error("there are no buckets at all");
-		}
-
-		limits l;
-
-		struct bucket_weight {
-			bucket		b;
-			float		weight = 0;
-			int		counter = 0;
-		};
-
-		std::vector<bucket_weight> good_buckets;
-		std::vector<bucket_weight> really_good_buckets;
-
-		float sum = 0;
-		float really_good_sum = 0;
-		for (auto it = m_buckets.begin(), end = m_buckets.end(); it != end; ++it) {
-			if (it->second->valid()) {
-				float w = it->second->weight(1, l);
-
-				BH_LOG(log, DNET_LOG_NOTICE, "test: bucket: %s, weight: %f", it->second->name(), w);
-
-				// skip buckets with zero weights
-				// usually this means that there is no free space for this request
-				// or stats are broken (timed out)
-				if (w <= 0)
-					continue;
-
-				bucket_weight bw;
-				bw.b = it->second;
-				bw.weight = w;
-
-				good_buckets.push_back(bw);
-				sum += w;
-
-				if (w > 0.5) {
-					really_good_buckets.push_back(bw);
-					really_good_sum += w;
-				}
-			}
-		}
-
-		guard.unlock();
-
-		// use really good buckets if we have them
-		if (really_good_sum > 0) {
-			sum = really_good_sum;
-			good_buckets.swap(really_good_buckets);
-		}
-
-		if (good_buckets.size() == 0) {
-			throw std::runtime_error("there are buckets, but they are not suitable for size " +
-					elliptics::lexical_cast(1));
-		}
-
-
-		// first test - call @get_bucket() many times, check that distribution
-		// of the buckets looks similar to the initial weights
-		int num = 10000;
-		for (int i = 0; i < num; ++i) {
-			std::string bname;
-			elliptics::error_info err = get_bucket(1, bname);
-			if (err) {
-				throw std::runtime_error("get_bucket() failed: " + err.message());
-			}
-
-			auto bit = std::find_if(good_buckets.begin(), good_buckets.end(),
-					[&](const bucket_weight &bw) { return bw.b->name() == bname; });
-			if (bit != good_buckets.end()) {
-				bit->counter++;
-			}
-		}
-
-		float eq_min = 0.9;
-		float eq_max = 1.1;
-		for (auto it = good_buckets.begin(), end = good_buckets.end(); it != end; ++it) {
-			float ratio = (float)it->counter/(float)num;
-			float wratio = it->weight / sum;
-
-			// @ratio is a number of this bucket selection related to total number of runs
-			// it should rougly correspond to the ratio of free space in given bucket, or weight
-
-			float eq = ratio / wratio;
-
-			BH_LOG(log, DNET_LOG_INFO, "test: bucket: %s, weight: %f, counter: %d/%d, "
-					"weight ratio: %f, selection ratio: %f, ratio/wratio: %.2f (must be in [%.2f, %.2f]",
-					it->b->name(), it->weight,
-					it->counter, num,
-					wratio, ratio,
-					eq, eq_min, eq_max);
-
-			if (eq > eq_max || eq < eq_min) {
-				std::ostringstream ss;
-				ss << "bucket: " << it->b->name() <<
-					", weight: " << it->weight <<
-					", weight ratio: " << wratio <<
-					", selection ratio: " << ratio <<
-					": parameters mismatch, weight and selection ratios should be close to each other";
-				throw std::runtime_error(ss.str());
-			}
-		}
-
-		BH_LOG(log, DNET_LOG_INFO, "test: weight comparison of %d buckets has been completed", m_buckets.size());
+	elliptics::session error_session() const {
+		return m_error_session;
 	}
 
 	// returns bucket name in @data or negative error code in @error
@@ -328,6 +216,123 @@ public:
 
 		b = it->second;
 		return elliptics::error_info();
+	}
+
+
+	// run self test, raise exception if there are problems
+	//
+	// Tests:
+	// 1. select bucket for upload multiple times,
+	// 	check that distribution is biased towards buckets with more free space available
+	void test() {
+		elliptics::logger &log = m_node->get_log();
+		BH_LOG(log, DNET_LOG_INFO, "test: start: buckets: %d", m_buckets.size());
+
+		std::unique_lock<std::mutex> guard(m_lock);
+		if (m_buckets.size() == 0) {
+			throw std::runtime_error("there are no buckets at all");
+		}
+
+		limits l;
+
+		struct bucket_weight {
+			bucket		b;
+			float		weight = 0;
+			int		counter = 0;
+		};
+
+		std::vector<bucket_weight> good_buckets;
+		std::vector<bucket_weight> really_good_buckets;
+
+		float sum = 0;
+		float really_good_sum = 0;
+		for (auto it = m_buckets.begin(), end = m_buckets.end(); it != end; ++it) {
+			if (it->second->valid()) {
+				float w = it->second->weight(1, l);
+
+				BH_LOG(log, DNET_LOG_NOTICE, "test: bucket: %s, weight: %f", it->second->name(), w);
+
+				// skip buckets with zero weights
+				// usually this means that there is no free space for this request
+				// or stats are broken (timed out)
+				if (w <= 0)
+					continue;
+
+				bucket_weight bw;
+				bw.b = it->second;
+				bw.weight = w;
+
+				good_buckets.push_back(bw);
+				sum += w;
+
+				if (w > 0.5) {
+					really_good_buckets.push_back(bw);
+					really_good_sum += w;
+				}
+			}
+		}
+
+		guard.unlock();
+
+		// use really good buckets if we have them
+		if (really_good_sum > 0) {
+			sum = really_good_sum;
+			good_buckets.swap(really_good_buckets);
+		}
+
+		if (good_buckets.size() == 0) {
+			throw std::runtime_error("there are buckets, but they are not suitable for size " +
+					elliptics::lexical_cast(1));
+		}
+
+
+		// first test - call @get_bucket() many times, check that distribution
+		// of the buckets looks similar to the initial weights
+		int num = 10000;
+		for (int i = 0; i < num; ++i) {
+			std::string bname;
+			elliptics::error_info err = get_bucket(1, bname);
+			if (err) {
+				throw std::runtime_error("get_bucket() failed: " + err.message());
+			}
+
+			auto bit = std::find_if(good_buckets.begin(), good_buckets.end(),
+					[&](const bucket_weight &bw) { return bw.b->name() == bname; });
+			if (bit != good_buckets.end()) {
+				bit->counter++;
+			}
+		}
+
+		float eq_min = 0.9;
+		float eq_max = 1.1;
+		for (auto it = good_buckets.begin(), end = good_buckets.end(); it != end; ++it) {
+			float ratio = (float)it->counter/(float)num;
+			float wratio = it->weight / sum;
+
+			// @ratio is a number of this bucket selection related to total number of runs
+			// it should rougly correspond to the ratio of free space in given bucket, or weight
+
+			float eq = ratio / wratio;
+
+			BH_LOG(log, DNET_LOG_INFO, "test: bucket: %s, weight: %f, counter: %d/%d, "
+					"weight ratio: %f, selection ratio: %f, ratio/wratio: %.2f (must be in [%.2f, %.2f]",
+					it->b->name(), it->weight,
+					it->counter, num,
+					wratio, ratio,
+					eq, eq_min, eq_max);
+
+			if (eq > eq_max || eq < eq_min) {
+				std::ostringstream ss;
+				ss << "bucket: " << it->b->name() <<
+					", weight: " << it->weight <<
+					", weight ratio: " << wratio <<
+					", selection ratio: " << ratio <<
+					": parameters mismatch, weight and selection ratios should be close to each other";
+				throw std::runtime_error(ss.str());
+			}
+		}
+
+		BH_LOG(log, DNET_LOG_INFO, "test: weight comparison of %d buckets has been completed", m_buckets.size());
 	}
 
 
