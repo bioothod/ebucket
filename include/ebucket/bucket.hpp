@@ -112,6 +112,10 @@ public:
 		reload();
 	}
 
+	~raw_bucket() {
+		wait_for_reload();
+	}
+
 	void reload() {
 		elliptics::session s(*m_node);
 		s.set_exceptions_policy(elliptics::session::no_exceptions);
@@ -126,7 +130,8 @@ public:
 
 		BH_LOG(log, DNET_LOG_INFO, "reload: going to reload bucket: %s", m_meta.name.c_str());
 		s.read_data(m_meta.name, 0, 0).connect(
-			std::bind(&raw_bucket::reload_completed, this, std::placeholders::_1, std::placeholders::_2));
+			std::bind(&raw_bucket::reload_completed, this,
+				std::placeholders::_1, std::placeholders::_2));
 	}
 
 	bool wait_for_reload() {
@@ -288,7 +293,7 @@ private:
 				std::copy(tmp.groups.begin(), tmp.groups.end(), std::ostream_iterator<int>(ss, ":"));
 
 				BH_LOG(log, DNET_LOG_INFO, "meta_unpack: bucket: %s, acls: %ld, flags: 0x%lx, groups: %s",
-						tmp.name.c_str(), tmp.acl.size(), tmp.flags, ss.str().c_str());
+						tmp.name.c_str(), tmp.acl.size(), tmp.flags, ss.str());
 
 				std::unique_lock<std::mutex> guard(m_lock);
 				std::swap(m_meta, tmp);
