@@ -1,3 +1,15 @@
+ebucket (0.2.1) unstable; urgency=low
+
+  * bucket: destructor must wait until all pending operations are completed
+  * bucket_processor: moved test() around, export error session
+  * Added global license file
+  * Updated debian/copyright
+  * cmake: fixed elliptics version lookup
+  * Create README.md
+  * Added example of bucket processor initialization by single key
+
+ -- Evgeniy Polyakov <zbr@ioremap.net>  Tue, 24 May 2016 02:05:45 +0400
+
 ebucket (0.2.0) unstable; urgency=low
 
   * test: added automatic bucket and bucket list generation and initialization test which checks bucket key

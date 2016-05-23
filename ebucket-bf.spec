@@ -1,6 +1,6 @@
 Summary:	Ebucket - Elliptics bucket processing library
 Name:		ebucket
-Version:	0.2.0
+Version:	0.2.1
 Release:	1%{?dist}
 
 License:	Apache 2.0
@@ -57,6 +57,15 @@ rm -rf %{buildroot}
 #%{_libdir}/*.so.*
 
 %changelog
+* Tue May 24 2016 Evgeniy Polyakov <zbr@ioremap.net> - 0.2.1
+- bucket: destructor must wait until all pending operations are completed
+- bucket_processor: moved test() around, export error session
+- Added global license file
+- Updated debian/copyright
+- cmake: fixed elliptics version lookup
+- Create README.md
+- Added example of bucket processor initialization by single key
+
 * Sat Feb 27 2016 Evgeniy Polyakov <zbr@ioremap.net> - 0.2.0
 - test: added automatic bucket and bucket list generation and initialization test which checks bucket key
 - bucket_processor: added initalization via bucket key
