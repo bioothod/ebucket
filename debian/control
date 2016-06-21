@@ -8,6 +8,7 @@ Build-Depends:
  libboost-program-options-dev | libboost-program-options1.48-dev,
  libboost-filesystem-dev | libboost-filesystem1.48-dev,
  elliptics-dev, elliptics-client,
+ libswarm3-dev,
  libthevoid3-dev,
  libmsgpack-dev
 Standards-Version: 3.9.1
@@ -15,6 +16,18 @@ Section: libs
 Vcs-Git: git://github.com/bioothod/ebucket.git
 Vcs-Browser: https://github.com/bioothod/ebucket.git
 Homepage: https://github.com/bioothod/ebucket.git
+
+Package: ebucket
+Section: libdevel
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Elliptics Bucket library
+ Ebucket states for Elliptics Bucket - an object which contains metadata about how replicas should be arranged in the storage.
+ This library helps operating with buckets.
+ http://doc.reverbrain.com/backrunner:backrunner#bucket
+
+ ebucket package contains HTTP server which selects bucket the most suitable for requested size.
+
 
 Package: ebucket-dev
 Section: libdevel
@@ -25,6 +38,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}
  libboost-program-options-dev | libboost-program-options1.48-dev,
  libboost-filesystem-dev | libboost-filesystem1.48-dev,
  elliptics-dev, elliptics-client,
+ libswarm3-dev,
  libthevoid3-dev,
  libmsgpack-dev
 Description: Elliptics Bucket library
@@ -32,3 +46,4 @@ Description: Elliptics Bucket library
  This library helps operating with buckets.
  http://doc.reverbrain.com/backrunner:backrunner#bucket
 
+ ebucket-dev package contains headers needed to embed bucket processing into your code.

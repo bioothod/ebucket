@@ -11,7 +11,7 @@ BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:	boost-devel, boost-system, boost-thread, boost-program-options, boost-filesystem
 BuildRequires:	elliptics-client-devel >= 2.26.10.1
-BuildRequires:  cmake, msgpack-devel, python-virtualenv, libthevoid3-devel
+BuildRequires:  cmake, msgpack-devel, python-virtualenv, libswarm3-devel, libthevoid3-devel
 
 %global debug_package %{nil}
 
@@ -19,6 +19,16 @@ BuildRequires:  cmake, msgpack-devel, python-virtualenv, libthevoid3-devel
 Ebucket states for Elliptics Bucket - an object which contains metadata about how replicas should be arranged in the storage.
 This library helps operating with buckets.
 http://doc.reverbrain.com/backrunner:backrunner#bucket
+
+%package
+Summary:	Ebucket - Elliptics bucket processing library
+
+%description
+Ebucket states for Elliptics Bucket - an object which contains metadata about how replicas should be arranged in the storage.
+This library helps operating with buckets.
+http://doc.reverbrain.com/backrunner:backrunner#bucket
+
+ebucket package contains HTTP server which selects bucket the most suitable for requested size.
 
 %package devel
 Summary:	Ebucket - Elliptics bucket processing library
@@ -28,6 +38,8 @@ Provides:	ebucket-static = %{version}-%{release}
 Ebucket states for Elliptics Bucket - an object which contains metadata about how replicas should be arranged in the storage.
 This library helps operating with buckets.
 http://doc.reverbrain.com/backrunner:backrunner#bucket
+
+ebucket-devel package contains headers needed to embed bucket processing into your code.
 
 %prep
 %setup -q
@@ -50,6 +62,11 @@ make install DESTDIR=%{buildroot}
 rm -rf %{buildroot}
 
 %files
+%defattr(-,root,root,-)
+%{_bindir}/*
+%doc conf/
+
+%files devel
 %defattr(-,root,root,-)
 %{_includedir}/*
 #%doc README.md
