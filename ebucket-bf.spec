@@ -20,14 +20,6 @@ Ebucket states for Elliptics Bucket - an object which contains metadata about ho
 This library helps operating with buckets.
 http://doc.reverbrain.com/backrunner:backrunner#bucket
 
-%package
-Summary:	Ebucket - Elliptics bucket processing library
-
-%description
-Ebucket states for Elliptics Bucket - an object which contains metadata about how replicas should be arranged in the storage.
-This library helps operating with buckets.
-http://doc.reverbrain.com/backrunner:backrunner#bucket
-
 ebucket package contains HTTP server which selects bucket the most suitable for requested size.
 
 %package devel
