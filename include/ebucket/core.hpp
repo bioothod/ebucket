@@ -8,12 +8,6 @@
 
 namespace ioremap { namespace ebucket {
 
-#define EBUCKET_LOG_ERROR blackhole::defaults::severity::error
-#define EBUCKET_LOG_WARNING blackhole::defaults::severity::warning
-#define EBUCKET_LOG_INFO blackhole::defaults::severity::info
-#define EBUCKET_LOG_NOTICE blackhole::defaults::severity::notice
-#define EBUCKET_LOG_DEBUG blackhole::defaults::severity::debug
-
 struct eurl {
 	std::string bucket;
 	std::string key;
