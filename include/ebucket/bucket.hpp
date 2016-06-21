@@ -81,6 +81,32 @@ struct bucket_meta {
 	bucket_meta() {
 		memset(reserved, 0, sizeof(reserved));
 	}
+
+	std::string to_string() const {
+		std::ostringstream ss;
+		ss << "name: " << name <<
+			", groups: [";
+		size_t added = 0;
+		for (auto group: groups) {
+			ss << group;
+			if (++added == groups.size())
+				break;
+
+			ss << ":";
+		}
+		ss << "], flags: 0x" << std::hex << flags << ", acl: {";
+
+		added = 0;
+		for (auto &p: acl) {
+			ss << p.first << ": " << p.second.to_string();
+			if (++added == acl.size())
+				break;
+			ss << ", ";
+		}
+		ss << "}";
+
+		return ss.str();
+	}
 };
 
 struct bucket_stat {
