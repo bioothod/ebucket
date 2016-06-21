@@ -116,12 +116,19 @@ public:
 		std::vector<bw> good_buckets;
 		good_buckets.reserve(m_buckets.size());
 
+		limits l;
 		for (auto it = m_buckets.begin(), end = m_buckets.end(); it != end; ++it) {
-			if (it->second->valid()) {
-				bw b;
-				b.b = it->second;
-				good_buckets.push_back(b);
-			}
+			if (!it->second->valid())
+				continue;
+
+			bw b;
+			b.b = it->second;
+			// weight calculation is a rather heavy task, cache this value
+			b.w = it->second->weight(size, l);
+			if (b.w == 0)
+				continue;
+
+			good_buckets.push_back(b);
 		}
 
 		guard.unlock();
@@ -132,12 +139,8 @@ public:
 
 		auto routes = m_error_session.get_routes();
 
-		limits l;
 		float sum = 0;
 		for (auto it = good_buckets.rbegin(), end = good_buckets.rend(); it != end; ++it) {
-			// weight calculation is a rather heavy task, cache this value
-			it->w = it->b->weight(1, l);
-
 			// check whether all groups from given buckets are present in the current route table
 			size_t have_routes = 0;
 			bucket_meta bmeta = it->b->meta();
