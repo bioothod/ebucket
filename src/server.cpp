@@ -79,7 +79,7 @@ public:
 		} catch (const std::exception &e) {
 			EBUCKET_LOG_ERROR("on_request: url: %s: invalid size parameter: %s",
 					req.url().to_human_readable().c_str(), e.what());
-			this->send_reply(swarm::http_response::bad_request);
+			send_error(swarm::http_response::bad_request, -EINVAL, e.what());
 			return;
 		}
 
@@ -88,7 +88,7 @@ public:
 		if (err) {
 			EBUCKET_LOG_ERROR("on_request: url: %s: could not find bucket for size: %ld, error: %s [%d]",
 					req.url().to_human_readable().c_str(), size, err.message().c_str(), err.code());
-			this->send_reply(swarm::http_response::service_unavailable);
+			send_error(swarm::http_response::service_unavailable, err.code(), err.message());
 			return;
 		}
 
@@ -120,11 +120,31 @@ public:
 	}
 
 	virtual void on_error(const boost::system::error_code &error) {
-		EBUCKET_LOG_ERROR("buffered-read: on_error: url: %s, error: %s",
+		EBUCKET_LOG_ERROR("on_error: url: %s, error: %s",
 			this->request().url().to_human_readable().c_str(), error.message().c_str());
 	}
 
 private:
+	void send_error(enum swarm::http_response::status_type status, int code, const std::string &message) {
+		JsonValue ret;
+		auto &allocator = ret.GetAllocator();
+
+		rapidjson::Value error(rapidjson::kObjectType);
+		rapidjson::Value message_val(message.c_str(), message.size(), allocator);
+		error.AddMember("message", message_val, allocator);
+		error.AddMember("code", code, allocator);
+
+		ret.AddMember("error", error, allocator);
+
+		std::string data = ret.ToString();
+
+		thevoid::http_response reply;
+		reply.set_code(status);
+		reply.headers().set_content_type("text/json; charset=utf-8");
+		reply.headers().set_content_length(data.size());
+
+		this->send_reply(std::move(reply), std::move(data));
+	}
 };
 
 template <typename Server>
