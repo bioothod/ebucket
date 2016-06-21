@@ -1,6 +1,6 @@
 Summary:	Ebucket - Elliptics bucket processing library
 Name:		ebucket
-Version:	0.2.1
+Version:	0.3.0
 Release:	1%{?dist}
 
 License:	Apache 2.0
@@ -66,6 +66,12 @@ rm -rf %{buildroot}
 #%{_libdir}/*.so.*
 
 %changelog
+* Tue Jun 21 2016 Evgeniy Polyakov <zbr@ioremap.net> - 0.3.0
+- bucket_processor: return error if there are no buckets suitable for given size
+- Added HTTP server which searches for bucket given requested size and returns JSON-serialized reply
+- bucket: added metadata to_string() method
+- debian: added build dependencies as dependencies for header-only development package
+
 * Tue May 24 2016 Evgeniy Polyakov <zbr@ioremap.net> - 0.2.1
 - bucket: destructor must wait until all pending operations are completed
 - bucket_processor: moved test() around, export error session

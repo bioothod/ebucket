@@ -1,3 +1,12 @@
+ebucket (0.3.0) unstable; urgency=low
+
+  * bucket_processor: return error if there are no buckets suitable for given size
+  * Added HTTP server which searches for bucket given requested size and returns JSON-serialized reply
+  * bucket: added metadata to_string() method
+  * debian: added build dependencies as dependencies for header-only development package
+
+ -- Evgeniy Polyakov <zbr@ioremap.net>  Tue, 21 Jun 2016 14:30:10 +0400
+
 ebucket (0.2.1) unstable; urgency=low
 
   * bucket: destructor must wait until all pending operations are completed
