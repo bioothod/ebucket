@@ -39,7 +39,7 @@ namespace ioremap { namespace ebucket {
 // elliptics will automatically fetch (data recover) data from other copies.
 class bucket_processor {
 public:
-	bucket_processor(std::shared_ptr<elliptics::node> &node) :
+	bucket_processor(std::shared_ptr<elliptics::node> node) :
 	m_node(node),
 	m_stat(node),
 	m_error_session(*m_node),
