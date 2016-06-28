@@ -85,16 +85,17 @@ func (bp *BucketProcessor) Close() {
 
 func (bp *BucketProcessor) GetBucket(size uint64) (*BucketMeta, error) {
 	var meta C.bucket_meta
-	err := C.ebucket_get_bucket(bp.bp, C.size_t(size), &meta)
+	err := C.ebucket_get_bucket(bp.bp, C.size_t(size), unsafe.Pointer(&meta))
 	if err != 0 {
 		return nil, fmt.Errorf("could not get bucket for size: %d, error: %d", size, err)
 	}
 
 	bm := &BucketMeta {
-		Name:		C.GoStringN(C.bucket_meta_name(&meta), C.int(C.bucket_meta_name_size(&meta))),
-		Groups:		make([]uint32, C.bucket_meta_groups_size(&meta)),
+		Name:		C.GoStringN(C.bucket_meta_name(unsafe.Pointer(&meta)),
+					C.int(C.bucket_meta_name_size(unsafe.Pointer(&meta)))),
+		Groups:		make([]uint32, C.bucket_meta_groups_size(unsafe.Pointer(&meta))),
 	}
-	C.bucket_meta_groups_copy(unsafe.Pointer(&bm.Groups[0]), &meta);
+	C.bucket_meta_groups_copy(unsafe.Pointer(&bm.Groups[0]), unsafe.Pointer(&meta));
 
 	return bm, nil
 }
@@ -104,16 +105,17 @@ func (bp *BucketProcessor) FindBucket(name string) (*BucketMeta, error) {
 	defer C.free(unsafe.Pointer(cname))
 
 	var meta C.bucket_meta
-	err := C.ebucket_find_bucket(bp.bp, cname, &meta)
+	err := C.ebucket_find_bucket(bp.bp, cname, unsafe.Pointer(&meta))
 	if err != 0 {
 		return nil, fmt.Errorf("could not find bucket with name: %s, error: %d", name, err)
 	}
 
 	bm := &BucketMeta {
-		Name:		C.GoStringN(C.bucket_meta_name(&meta), C.int(C.bucket_meta_name_size(&meta))),
-		Groups:		make([]uint32, C.bucket_meta_groups_size(&meta)),
+		Name:		C.GoStringN(C.bucket_meta_name(unsafe.Pointer(&meta)),
+					C.int(C.bucket_meta_name_size(unsafe.Pointer(&meta)))),
+		Groups:		make([]uint32, C.bucket_meta_groups_size(unsafe.Pointer(&meta))),
 	}
-	C.bucket_meta_groups_copy(unsafe.Pointer(&bm.Groups[0]), &meta);
+	C.bucket_meta_groups_copy(unsafe.Pointer(&bm.Groups[0]), unsafe.Pointer(&meta));
 
 	return bm, nil
 }
