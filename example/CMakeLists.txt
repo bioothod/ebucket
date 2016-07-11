@@ -5,4 +5,4 @@ target_link_libraries(ebucket_simple
 	${MSGPACK_LIBRARIES}
 )
 
-install(FILES simple.cpp DESTINATION shared/ebucket/examples)
+install(FILES simple.cpp DESTINATION share/ebucket/examples)
