@@ -4,3 +4,5 @@ target_link_libraries(ebucket_simple
 	${ELLIPTICS_LIBRARIES}
 	${MSGPACK_LIBRARIES}
 )
+
+install(FILES simple.cpp DESTINATION shared/ebucket/examples)
