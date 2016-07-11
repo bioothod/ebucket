@@ -1,1 +1,2 @@
-include/ebucket/*.hpp
+usr/include/ebucket/*.hpp
+usr/share/ebucket
