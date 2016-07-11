@@ -1,6 +1,6 @@
 Summary:	Ebucket - Elliptics bucket processing library
 Name:		ebucket
-Version:	0.3.0
+Version:	0.3.1
 Release:	1%{?dist}
 
 License:	Apache 2.0
@@ -66,6 +66,11 @@ rm -rf %{buildroot}
 #%{_libdir}/*.so.*
 
 %changelog
+* Tue Jul 12 2016 Evgeniy Polyakov <zbr@ioremap.net> - 0.3.1
+- go: added and then removed GO bindings since it was moved into https://github.com/bioothod/ebucket-go
+- debian: removed empty lines, otherwise dpkg fails
+- bucket_processor: accept shared pointer to node not its reference, otherwise it is impossible to use rvalue shared pointer
+
 * Tue Jun 21 2016 Evgeniy Polyakov <zbr@ioremap.net> - 0.3.0
 - bucket_processor: return error if there are no buckets suitable for given size
 - Added HTTP server which searches for bucket given requested size and returns JSON-serialized reply
