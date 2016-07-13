@@ -61,7 +61,7 @@ rm -rf %{buildroot}
 %files devel
 %defattr(-,root,root,-)
 %{_includedir}/*
-#%doc README.md
+%{_datadir}/ebucket/examples/*
 #%{_bindir}/*
 #%{_libdir}/*.so.*
 
