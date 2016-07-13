@@ -1,3 +1,11 @@
+ebucket (0.3.2) unstable; urgency=low
+
+  * debian: added install files
+  * cmake: added simple.cpp file into example dir
+  * git: added ignore file
+
+ -- Evgeniy Polyakov <zbr@ioremap.net>  Wed, 13 Jul 2016 05:09:44 +0400
+
 ebucket (0.3.1) unstable; urgency=low
 
   * go: added and then removed GO bindings since it was moved into https://github.com/bioothod/ebucket-go

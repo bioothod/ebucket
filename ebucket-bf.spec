@@ -1,6 +1,6 @@
 Summary:	Ebucket - Elliptics bucket processing library
 Name:		ebucket
-Version:	0.3.1
+Version:	0.3.2
 Release:	1%{?dist}
 
 License:	Apache 2.0
@@ -66,6 +66,11 @@ rm -rf %{buildroot}
 #%{_libdir}/*.so.*
 
 %changelog
+* Wed Jul 13 2016 Evgeniy Polyakov <zbr@ioremap.net> - 0.3.2
+- debian: added install files
+- cmake: added simple.cpp file into example dir
+- git: added ignore file
+
 * Tue Jul 12 2016 Evgeniy Polyakov <zbr@ioremap.net> - 0.3.1
 - go: added and then removed GO bindings since it was moved into https://github.com/bioothod/ebucket-go
 - debian: removed empty lines, otherwise dpkg fails
