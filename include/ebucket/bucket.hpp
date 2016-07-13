@@ -200,8 +200,10 @@ public:
 
 
 	bucket_meta meta() {
+		bucket_meta ret;
 		std::lock_guard<std::mutex> guard(m_lock);
-		return m_meta;
+		ret = m_meta;
+		return ret;
 	}
 
 	void set_backend_stat(int group, const backend_stat &bs) {
